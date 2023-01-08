@@ -4,6 +4,7 @@ using Behnam_BehnamAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BehnamBehnamAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230107205420_updateDutyNumberTable")]
+    partial class updateDutyNumberTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -56,7 +59,7 @@ namespace BehnamBehnamAPI.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedDate = new DateTime(2023, 1, 8, 16, 19, 16, 324, DateTimeKind.Local).AddTicks(7521),
+                            CreatedDate = new DateTime(2023, 1, 8, 15, 54, 19, 984, DateTimeKind.Local).AddTicks(1187),
                             ImageUrl = "https://something",
                             Name = "test1",
                             Rate = "5",
@@ -65,7 +68,7 @@ namespace BehnamBehnamAPI.Migrations
                         new
                         {
                             Id = 2,
-                            CreatedDate = new DateTime(2023, 1, 9, 16, 19, 16, 324, DateTimeKind.Local).AddTicks(7571),
+                            CreatedDate = new DateTime(2023, 1, 9, 15, 54, 19, 984, DateTimeKind.Local).AddTicks(1237),
                             ImageUrl = "https://something",
                             Name = "test2",
                             Rate = "5",
@@ -74,7 +77,7 @@ namespace BehnamBehnamAPI.Migrations
                         new
                         {
                             Id = 3,
-                            CreatedDate = new DateTime(2023, 1, 10, 16, 19, 16, 324, DateTimeKind.Local).AddTicks(7574),
+                            CreatedDate = new DateTime(2023, 1, 10, 15, 54, 19, 984, DateTimeKind.Local).AddTicks(1240),
                             ImageUrl = "https://something",
                             Name = "test3",
                             Rate = "5",
@@ -83,7 +86,7 @@ namespace BehnamBehnamAPI.Migrations
                         new
                         {
                             Id = 4,
-                            CreatedDate = new DateTime(2023, 1, 11, 16, 19, 16, 324, DateTimeKind.Local).AddTicks(7577),
+                            CreatedDate = new DateTime(2023, 1, 11, 15, 54, 19, 984, DateTimeKind.Local).AddTicks(1242),
                             ImageUrl = "https://something",
                             Name = "test4",
                             Rate = "5",
@@ -92,7 +95,7 @@ namespace BehnamBehnamAPI.Migrations
                         new
                         {
                             Id = 5,
-                            CreatedDate = new DateTime(2023, 1, 12, 16, 19, 16, 324, DateTimeKind.Local).AddTicks(7579),
+                            CreatedDate = new DateTime(2023, 1, 12, 15, 54, 19, 984, DateTimeKind.Local).AddTicks(1245),
                             ImageUrl = "https://something",
                             Name = "test5",
                             Rate = "5",
@@ -108,58 +111,13 @@ namespace BehnamBehnamAPI.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("DutyId")
-                        .HasColumnType("int");
-
                     b.Property<string>("SpecialDetails")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("DutyNo");
 
-                    b.HasIndex("DutyId");
-
                     b.ToTable("DutyNumbers");
-                });
-
-            modelBuilder.Entity("Behnam_BehnamAPI.Models.LocalUser", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("LocalUsers");
-                });
-
-            modelBuilder.Entity("Behnam_BehnamAPI.Model.DutyNumber", b =>
-                {
-                    b.HasOne("Behnam_BehnamAPI.Model.Duty", "Duty")
-                        .WithMany()
-                        .HasForeignKey("DutyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Duty");
                 });
 #pragma warning restore 612, 618
         }

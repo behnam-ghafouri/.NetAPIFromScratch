@@ -1,4 +1,5 @@
 ﻿using Behnam_BehnamAPI.Model;
+using Behnam_BehnamAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Behnam_BehnamAPI.Data
@@ -7,7 +8,8 @@ namespace Behnam_BehnamAPI.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
         public DbSet<Duty> Duties { get; set; }
-
+        public DbSet<DutyNumber> DutyNumbers { get; set; }
+        public DbSet<LocalUser> LocalUsers { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             List<Duty> temp = new List<Duty>();

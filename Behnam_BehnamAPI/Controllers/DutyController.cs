@@ -1,9 +1,11 @@
-﻿using Behnam_BehnamAPI.Data;
+﻿using AutoMapper;
+using Behnam_BehnamAPI.Data;
 using Behnam_BehnamAPI.Model;
+using Behnam_BehnamAPI.Models;
+using Behnam_BehnamAPI.Repository.IRepository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace Behnam_BehnamAPI.Controllers
 {
@@ -12,42 +14,50 @@ namespace Behnam_BehnamAPI.Controllers
     [ApiController]
     public class DutyController:ControllerBase
     {
-        private readonly ApplicationDbContext _db;
-
-        public DutyController(ApplicationDbContext db)
+        protected APIResponse _response;
+        private readonly IDutyRepository _dbDuty;
+        private readonly IMapper _mapper;
+        public DutyController(IDutyRepository dbDuty, IMapper mapper)
         {
-            _db = db;
+            _dbDuty = dbDuty;
+            _mapper = mapper;
+            this._response = new();
         }
         [HttpGet]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<IEnumerable<DutyDTO>> GetDuties()
+        public async Task<ActionResult<APIResponse>> GetDuties()
         {
-            return Ok(_db.Duties.ToList());
+            IEnumerable<Duty>  duties = await _dbDuty.GetAll();
+            _response.Result = _mapper.Map<List<DutyDTO>>(duties);
+            _response.httpStatusCode = System.Net.HttpStatusCode.OK;
+            return Ok(_response);
         }
 
         [HttpGet("{id:int}",Name ="GetDuty")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ActionResult<DutyDTO?> GetDuty(int id)
+        public async Task<ActionResult<DutyDTO?>> GetDuty(int id)
         {
             if(id == 0)
                 return BadRequest();
-            var duty = _db.Duties.FirstOrDefault(elm=>elm.Id==id);
+            var duty = await _dbDuty.Get(elm=>elm.Id==id);
             if (duty == null)
                 return NotFound();
-            return Ok(duty);
+            return Ok(_mapper.Map<DutyDTO>(duty));
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ActionResult<DutyDTO> CreatDuty([FromBody] DutyDTO dutyDTO)
+        public async Task<ActionResult<DutyDTO>> CreatDuty([FromBody] DutyDTO dutyDTO)
         {
             //check the DTO validation annotations 
             //if (ModelState.IsValid)
-            if(_db.Duties.FirstOrDefault(e=>e.Name.ToLower()==dutyDTO.Name.ToLower()) != null)
+            if(await _dbDuty.Get(e=>e.Name.ToLower()==dutyDTO.Name.ToLower()) != null)
             {
                 ModelState.AddModelError("CustomError", "Is not unique");
                 return BadRequest(ModelState);
@@ -56,15 +66,7 @@ namespace Behnam_BehnamAPI.Controllers
                 return BadRequest(dutyDTO);
             if(dutyDTO.Id > 0)            
                 return StatusCode(StatusCodes.Status500InternalServerError);
-            Duty duty = new()
-                {
-                    Name = dutyDTO.Name,
-                    Rate = dutyDTO.Rate,
-                    ImageUrl = dutyDTO.ImageUrl,
-                    Sqft = dutyDTO.Sqft,
-                };
-            _db.Duties.AddAsync(duty);
-            _db.SaveChanges();
+            await _dbDuty.Creat(_mapper.Map<Duty>(dutyDTO));          
             return CreatedAtRoute("GetDuty",new {id=dutyDTO.Id},dutyDTO);         
         }
 
@@ -72,49 +74,44 @@ namespace Behnam_BehnamAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpDelete("{id:int}",Name = "DeleteDuty")]
-        public IActionResult DeleteDuty(int id)
+        [Authorize(Roles = "custom")]
+        public async Task<IActionResult> DeleteDuty(int id)
         {
             if (id == null)
                 return BadRequest();
-            var duty = _db.Duties.FirstOrDefault(elm => elm.Id == id);
+            var duty = await _dbDuty.Get(elm=>elm.Id==id);
             if (duty == null)
                 return NotFound();
-            _db.Duties.Remove(duty);
-            _db.SaveChanges();
+            await _dbDuty.Remove(duty);
+            return NoContent();
+        }
+
+        [HttpPut("{id:int}", Name = "UpdateDuty")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateDuty(int id, [FromBody]DutyDTO dutyDTO)
+        {
+            if (dutyDTO == null || dutyDTO.Id != id)
+                return BadRequest();
+            await _dbDuty.Update(_mapper.Map<Duty>(dutyDTO));
             return NoContent();
         }
 
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpPatch("{id:int}", Name = "UpdatePartialDuty")]
-        public IActionResult UpdatePartialDuty(int id,JsonPatchDocument<DutyDTO> dutyDTO)
+        public async Task<IActionResult> UpdatePartialDuty(int? id,JsonPatchDocument<DutyDTO> dutyDTO)
         {
             if (id == null)
                 return BadRequest();
-            var duty = _db.Duties.AsNoTracking().FirstOrDefault(elm => elm.Id == id);
+            var duty = await _dbDuty.Get(elm => elm.Id == id);
             if (duty == null)
                 return NotFound();
-            DutyDTO dutydto_ = new()
-            {
-                Id = duty.Id,
-                Name = duty.Name,
-                Rate = duty.Rate,
-                ImageUrl = duty.ImageUrl,
-                Sqft = duty.Sqft,
-            };
-            dutyDTO.ApplyTo(dutydto_, ModelState);
-            Duty duty1 = new()
-            {
-                Id = dutydto_.Id,
-                Name = dutydto_.Name,
-                Rate = dutydto_.Rate,
-                ImageUrl = dutydto_.ImageUrl,
-                Sqft = dutydto_.Sqft,
-            };
-            _db.Update(duty1);
-            _db.SaveChanges();
+            DutyDTO dutyDTO1 = _mapper.Map<DutyDTO>(duty);
+            dutyDTO.ApplyTo(dutyDTO1, ModelState);
             if(!ModelState.IsValid)
                 return BadRequest();
+            await _dbDuty.Update(_mapper.Map<Duty>(dutyDTO1));
             return NoContent();
         }
     }
